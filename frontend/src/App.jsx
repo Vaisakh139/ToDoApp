@@ -1,34 +1,33 @@
 import { useState, useEffect } from 'react'
+import { onAuthStateChanged, signOut } from 'firebase/auth'
+import { auth } from './firebase'
 import TaskList from './components/TaskList'
 import TaskForm from './components/TaskForm'
 import LoginPage from './components/LoginPage'
-import { getAllTasks, createTask, updateTask, patchStatus, deleteTask, logout } from './api/taskApi'
+import { getAllTasks, createTask, updateTask, patchStatus, deleteTask } from './api/taskApi'
 
 export default function App() {
-  const [token, setToken]           = useState(() => localStorage.getItem('auth_token'))
-  const [tasks, setTasks]           = useState([])
-  const [editingTask, setEditing]   = useState(null)
-  const [showForm, setShowForm]     = useState(false)
-  const [error, setError]           = useState('')
+  const [user, setUser]            = useState(undefined)
+  const [tasks, setTasks]          = useState([])
+  const [editingTask, setEditing]  = useState(null)
+  const [showForm, setShowForm]    = useState(false)
+  const [error, setError]          = useState('')
 
-  useEffect(() => { if (token) fetchTasks() }, [token])
+  useEffect(() => onAuthStateChanged(auth, setUser), [])
+  useEffect(() => { if (user) fetchTasks(); else setTasks([]) }, [user])
 
   async function fetchTasks() {
     try {
       setTasks(await getAllTasks())
     } catch (e) {
-      if (e.message === 'Unauthorized') handleLogout()
-      else setError(e.message)
+      setError(e.message)
     }
   }
 
   async function handleSubmit(data) {
     try {
-      if (editingTask) {
-        await updateTask(editingTask.id, data)
-      } else {
-        await createTask(data)
-      }
+      if (editingTask) await updateTask(editingTask.id, data)
+      else await createTask(data)
       closeForm()
       fetchTasks()
     } catch (e) {
@@ -56,9 +55,7 @@ export default function App() {
   }
 
   async function handleLogout() {
-    await logout().catch(() => {})
-    localStorage.removeItem('auth_token')
-    setToken(null)
+    await signOut(auth)
     setTasks([])
   }
 
@@ -66,7 +63,8 @@ export default function App() {
   function openEdit(task) { setEditing(task); setShowForm(true) }
   function closeForm()    { setEditing(null); setShowForm(false) }
 
-  if (!token) return <LoginPage onLogin={setToken} />
+  if (user === undefined) return <div className="loading">Loading…</div>
+  if (!user) return <LoginPage />
 
   return (
     <div className="app">

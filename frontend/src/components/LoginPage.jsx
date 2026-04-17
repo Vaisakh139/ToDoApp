@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { login } from '../api/taskApi'
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import { auth } from '../firebase'
 
-export default function LoginPage({ onLogin }) {
-  const [username, setUsername] = useState('')
+export default function LoginPage() {
+  const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
@@ -12,9 +13,8 @@ export default function LoginPage({ onLogin }) {
     setError('')
     setLoading(true)
     try {
-      const { token } = await login(username, password)
-      localStorage.setItem('auth_token', token)
-      onLogin(token)
+      await signInWithEmailAndPassword(auth, email, password)
+      // onAuthStateChanged in App.jsx handles the rest
     } catch (e) {
       setError(e.message)
     } finally {
@@ -32,13 +32,13 @@ export default function LoginPage({ onLogin }) {
 
         <form onSubmit={handleSubmit}>
           <label>
-            Username
+            Email
             <input
-              type="text"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
               autoFocus
-              autoComplete="username"
+              autoComplete="email"
             />
           </label>
           <label>
@@ -54,8 +54,6 @@ export default function LoginPage({ onLogin }) {
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
-
-        <p className="login-hint">Hint: admin / password</p>
       </div>
     </div>
   )
