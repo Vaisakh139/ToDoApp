@@ -1,26 +1,57 @@
 import {
-  collection, getDocs, addDoc, updateDoc, deleteDoc,
-  doc, serverTimestamp, query, orderBy
-} from 'firebase/firestore'
-import { db } from '../firebase'
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  serverTimestamp,
+  query,
+  orderBy,
+  where,
+  writeBatch,
+} from "firebase/firestore";
+import { db } from "../firebase";
 
-const COL = 'tasks'
+const toTask = (d) => ({ id: d.id, ...d.data() });
+const col = (uid) => collection(db, "users", uid, "tasks");
+const taskDoc = (uid, id) => doc(db, "users", uid, "tasks", id);
 
-const toTask = d => ({ id: d.id, ...d.data() })
+export const getAllTasks = async (uid) => {
+  const snap = await getDocs(query(col(uid), orderBy("createdAt", "desc")));
+  return snap.docs.map(toTask);
+};
 
-export const getAllTasks = async () => {
-  const snap = await getDocs(query(collection(db, COL), orderBy('createdAt', 'desc')))
-  return snap.docs.map(toTask)
+export const createTask = async (uid, data) => {
+  try {
+    const docRef = await addDoc(
+      collection(db, "users", uid, "tasks"), // user-specific tasks
+      {
+        ...data,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      },
+    );
+
+    return docRef.id;
+  } catch (err) {
+    console.error("Error creating task:", err);
+    throw err;
+  }
+};
+
+export const updateTask = (uid, id, data) =>
+  updateDoc(taskDoc(uid, id), { ...data, updatedAt: serverTimestamp() });
+
+export const patchStatus = (uid, id, status) =>
+  updateDoc(taskDoc(uid, id), { status, updatedAt: serverTimestamp() });
+
+export const deleteTask = (uid, id) => deleteDoc(taskDoc(uid, id));
+
+export const deleteTasksByCategory = async (uid, categoryId) => {
+  const snap = await getDocs(query(col(uid), where('categoryId', '==', categoryId)))
+  if (snap.empty) return
+  const batch = writeBatch(db)
+  snap.docs.forEach(d => batch.delete(d.ref))
+  await batch.commit()
 }
-
-export const createTask = (data) =>
-  addDoc(collection(db, COL), { ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
-
-export const updateTask = (id, data) =>
-  updateDoc(doc(db, COL, id), { ...data, updatedAt: serverTimestamp() })
-
-export const patchStatus = (id, status) =>
-  updateDoc(doc(db, COL, id), { status, updatedAt: serverTimestamp() })
-
-export const deleteTask = (id) =>
-  deleteDoc(doc(db, COL, id))

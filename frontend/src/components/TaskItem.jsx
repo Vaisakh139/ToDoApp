@@ -1,7 +1,23 @@
 const STATUS_CYCLE = { TODO: 'IN_PROGRESS', IN_PROGRESS: 'DONE', DONE: 'TODO' }
 const STATUS_LABEL = { TODO: 'To Do', IN_PROGRESS: 'In Progress', DONE: 'Done' }
 
-export default function TaskItem({ task, onEdit, onDelete, onStatusChange }) {
+function fmtDate(val) {
+  if (!val) return null
+  return new Date(val).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+function fmtDateTime(val) {
+  if (!val) return null
+  return new Date(val).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+function isOverdue(dueDate) {
+  if (!dueDate) return false
+  return new Date(dueDate) < new Date(new Date().toDateString())
+}
+
+export default function TaskItem({ task, categories = [], onEdit, onDelete, onStatusChange }) {
+  const category = task.categoryId ? categories.find(c => c.id === task.categoryId) : null
   return (
     <div className={`task-item status-${task.status.toLowerCase()}`}>
       <div className="task-main">
@@ -15,6 +31,21 @@ export default function TaskItem({ task, onEdit, onDelete, onStatusChange }) {
         <div className="task-text">
           <strong>{task.title}</strong>
           {task.description && <p>{task.description}</p>}
+          <div className="task-meta">
+            {category && (
+              <span className="meta-tag cat-badge">{category.name}</span>
+            )}
+            {task.dueDate && (
+              <span className={`meta-tag${isOverdue(task.dueDate) && task.status !== 'DONE' ? ' overdue' : ''}`}>
+                📅 {fmtDate(task.dueDate)}
+              </span>
+            )}
+            {task.reminder && (
+              <span className="meta-tag">
+                🔔 {fmtDateTime(task.reminder)}
+              </span>
+            )}
+          </div>
         </div>
       </div>
       <div className="task-actions">
