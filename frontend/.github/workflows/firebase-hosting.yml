@@ -3,7 +3,7 @@ name: Deploy to Firebase Hosting
 on:
 push:
 branches:
-- main
+- front-firebase
 
 jobs:
 build_and_deploy:
@@ -39,4 +39,3 @@ steps:
       firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
       channelId: live
       projectId: todo-4b619
-```
