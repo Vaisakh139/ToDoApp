@@ -1,6 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const STATUSES = ['TODO', 'IN_PROGRESS', 'DONE']
+
+function newSubtask() {
+  return { id: crypto.randomUUID(), title: '', done: false }
+}
 
 export default function TaskForm({ task, categories = [], defaultCategoryId = null, onSubmit, onCancel, saving = false }) {
   const [title, setTitle]           = useState('')
@@ -9,6 +13,9 @@ export default function TaskForm({ task, categories = [], defaultCategoryId = nu
   const [dueDate, setDueDate]       = useState('')
   const [reminder, setReminder]     = useState('')
   const [categoryId, setCategoryId] = useState(defaultCategoryId || '')
+  const [priority, setPriority]     = useState('MEDIUM')
+  const [subtasks, setSubtasks]     = useState([])
+  const lastInputRef                = useRef(null)
 
   useEffect(() => {
     if (task) {
@@ -18,8 +25,31 @@ export default function TaskForm({ task, categories = [], defaultCategoryId = nu
       setDueDate(task.dueDate || '')
       setReminder(task.reminder || '')
       setCategoryId(task.categoryId || '')
+      setPriority(task.priority || 'MEDIUM')
+      setSubtasks(task.subtasks || [])
     }
   }, [task])
+
+  function addSubtask() {
+    setSubtasks(prev => [...prev, newSubtask()])
+    setTimeout(() => lastInputRef.current?.focus(), 0)
+  }
+
+  function updateSubtaskTitle(id, title) {
+    setSubtasks(prev => prev.map(s => s.id === id ? { ...s, title } : s))
+  }
+
+  function removeSubtask(id) {
+    setSubtasks(prev => prev.filter(s => s.id !== id))
+  }
+
+  function handleSubtaskKeyDown(e, index) {
+    if (e.key === 'Enter') { e.preventDefault(); addSubtask() }
+    if (e.key === 'Backspace' && !e.target.value) {
+      e.preventDefault()
+      setSubtasks(prev => prev.filter((_, i) => i !== index))
+    }
+  }
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -31,6 +61,8 @@ export default function TaskForm({ task, categories = [], defaultCategoryId = nu
       dueDate: dueDate || null,
       reminder: reminder || null,
       categoryId: categoryId || null,
+      priority,
+      subtasks: subtasks.filter(s => s.title.trim()).map(s => ({ ...s, title: s.title.trim() })),
     })
   }
 
@@ -67,6 +99,14 @@ export default function TaskForm({ task, categories = [], defaultCategoryId = nu
               </select>
             </label>
             <label>
+              Priority
+              <select value={priority} onChange={e => setPriority(e.target.value)} className={`priority-select priority-${priority.toLowerCase()}`}>
+                <option value="LOW">Low</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH">High</option>
+              </select>
+            </label>
+            <label>
               Category
               <select value={categoryId} onChange={e => setCategoryId(e.target.value)}>
                 <option value="">No category</option>
@@ -86,6 +126,35 @@ export default function TaskForm({ task, categories = [], defaultCategoryId = nu
               <input type="datetime-local" value={reminder} onChange={e => setReminder(e.target.value)} />
             </label>
           </div>
+
+          <div className="subtask-section">
+            <div className="subtask-header">
+              <span className="subtask-label">Subtasks</span>
+              <button type="button" className="subtask-add-btn" onClick={addSubtask}>+ Add</button>
+            </div>
+            {subtasks.length > 0 && (
+              <ul className="subtask-form-list">
+                {subtasks.map((s, i) => (
+                  <li key={s.id} className="subtask-form-item">
+                    <input
+                      ref={i === subtasks.length - 1 ? lastInputRef : null}
+                      className="subtask-form-input"
+                      value={s.title}
+                      onChange={e => updateSubtaskTitle(s.id, e.target.value)}
+                      onKeyDown={e => handleSubtaskKeyDown(e, i)}
+                      placeholder={`Subtask ${i + 1}`}
+                    />
+                    <button
+                      type="button"
+                      className="subtask-remove-btn"
+                      onClick={() => removeSubtask(s.id)}
+                    >×</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
           <div className="form-actions">
             <button type="button" className="btn-secondary" onClick={onCancel} disabled={saving}>Cancel</button>
             <button type="submit" className="btn-primary" disabled={saving}>

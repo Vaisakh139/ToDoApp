@@ -1,6 +1,6 @@
 import TaskItem from './TaskItem'
 
-export default function TaskList({ tasks, categories = [], onEdit, onDelete, onStatusChange }) {
+export default function TaskList({ tasks, categories = [], onEdit, onDelete, onStatusChange, onPriorityChange, onCategoryChange, onSubtaskToggle }) {
   if (tasks.length === 0) {
     return <p className="empty-state">No tasks yet. Add one above!</p>
   }
@@ -15,6 +15,9 @@ export default function TaskList({ tasks, categories = [], onEdit, onDelete, onS
           onEdit={onEdit}
           onDelete={onDelete}
           onStatusChange={onStatusChange}
+          onPriorityChange={onPriorityChange}
+          onCategoryChange={onCategoryChange}
+          onSubtaskToggle={onSubtaskToggle}
         />
       ))}
     </div>

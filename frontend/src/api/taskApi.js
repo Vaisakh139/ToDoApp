@@ -48,6 +48,9 @@ export const patchStatus = (uid, id, status) =>
 
 export const deleteTask = (uid, id) => deleteDoc(taskDoc(uid, id));
 
+export const updateSubtasks = (uid, id, subtasks) =>
+  updateDoc(taskDoc(uid, id), { subtasks, updatedAt: serverTimestamp() });
+
 export const deleteTasksByCategory = async (uid, categoryId) => {
   const snap = await getDocs(query(col(uid), where('categoryId', '==', categoryId)))
   if (snap.empty) return

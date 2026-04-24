@@ -128,22 +128,26 @@ export default function Sidebar({ categories, selectedId, onSelect, onAdd, onRen
         ))}
       </ul>
 
-      <form className="cat-add-form" onSubmit={handleAdd}>
-        <input
-          className="cat-input"
-          value={newName}
-          onChange={e => setNewName(e.target.value)}
-          placeholder="New category…"
-          maxLength={40}
-        />
-        <button
-          type="submit"
-          className="cat-add-btn"
-          disabled={adding || !newName.trim()}
-        >
-          {adding ? '…' : '+'}
-        </button>
-      </form>
+      {categories.length < 8 ? (
+        <form className="cat-add-form" onSubmit={handleAdd}>
+          <input
+            className="cat-input"
+            value={newName}
+            onChange={e => setNewName(e.target.value)}
+            placeholder="New category…"
+            maxLength={40}
+          />
+          <button
+            type="submit"
+            className="cat-add-btn"
+            disabled={adding || !newName.trim()}
+          >
+            {adding ? '…' : '+'}
+          </button>
+        </form>
+      ) : (
+        <p className="cat-limit-msg">Maximum 8 categories reached.</p>
+      )}
     </aside>
   )
 }
